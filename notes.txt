@@ -1,0 +1,4 @@
+Before fitting any models, I did some exploratory analysis, which yielded a few insights I needed to be aware of:
+-There is strong multicollinearity among some of the predictor variables. In particular, total households and total population, as well as household growth and population growth are each strongly correlated with each other. There is also, as we might expect, an interaction among the percents of homes that are owner occupied, renter occupied, and vacant.
+-One of the counties is an extreme outlier in terms of size.
+-At first glance, some of the predictors, such as average household size and median age, appear to not vary signficantly between Obama counties and Romney counties, though it is too early to conclude that they have no predictive value.
