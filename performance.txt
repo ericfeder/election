@@ -1,0 +1,6 @@
+Cross-Validated Accuracy: 0.8217464 
+Cross-Validated Confusion Matrix:
+              
+               Barack Obama Mitt Romney
+  Barack Obama   0.07712742  0.03773931
+  Mitt Romney    0.14051479  0.74461848
