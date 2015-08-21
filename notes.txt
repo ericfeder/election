@@ -1,10 +1,10 @@
-My code was written for R version 3.1.1 and four packages installed from CRAN on OS X 10.10.5.
+My code was written on OS X 10.10.5 with R version 3.1.1 and utilizing four packages installed from CRAN.
 
 Before fitting any models, I did some exploratory analysis, which yielded a few insights I needed to be aware of:
 -There is strong multicollinearity among some of the predictor variables. In particular, total households and total population, as well as household growth and population growth are each strongly correlated with each other. There is also, as we might expect, an interaction among the percents of homes that are owner occupied, renter occupied, and vacant.
 -One of the counties is an extreme outlier in terms of size.
--At first glance, some of the predictors, such as average household size and median age, appear to not vary signficantly between Obama counties and Romney counties, though it is too early to conclude that they have no predictive value.
+-At first glance, some of the predictors, such as average household size and median age, appear to not vary signficantly between Obama counties and Romney counties, though this alone is insufficient evidence to conclude that they have no predictive value.
 
-I tested out several different hyperparameters for each of the models, and found minimal differences between their performance. I also tried out some crude, manual attempts at feature selection, particularly for the logistic regression, but found no improvement. With more time, I would have liked to use a more rigorous approach, such as regularized logistic regression. Finally, I tried completely removing the county with the outlier value for total population, but saw no change in out of sample accuracty.
+Overall, all the models I tested had very similar performance. I tested out several different hyperparameters for each of the models, and found minimal differences and also tried out some crude, manual attempts at feature selection, particularly for the logistic regression, but found no improvement. With more time, I would have liked to use a more rigorous approach, such as regularized logistic regression. Finally, I tried completely removing the county with the outlier value for total population, but saw no change in the out-of-sample accuracty.
 
-Random Forests generally had the highest accuracy and did not predict Romney in Obama counties as often as the other models, though the results were very close and changed slightly with each repetition.
+In the end, I selected Random Forests because they generally had the highest accuracy and did not predict Romney in Obama counties as often as the other models, though the results were very close and changed slightly with each repetition.
