@@ -70,7 +70,7 @@ print.model.performance <- function(perf){
 kFold <- 10
 cross.validation.splits <- prepareForCrossValidation(counties, kFold)
 
-# Evaluate logistic regression (assumes Obama winning = TRUE and Romney winning = FALSE)
+# Evaluate logistic regression (defines Obama winning = TRUE and Romney winning = FALSE)
 trainLogistic <- function(df) glm(Winner == "Barack Obama" ~ ., family="binomial", data=df)
 logistic.performace <- evaluateModel(trainLogistic, categorical=F)
 
