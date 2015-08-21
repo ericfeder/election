@@ -1,10 +1,12 @@
 # # Install necessary packages
-# install.packages("RandomForest")
 # install.packages("data.table")
+# install.packages("randomForest")
+# install.packages("gbm")
 
 # Load necessary packages
-library(randomForest)
 library(data.table)
+library(randomForest)
+library(gbm)
 
 # Read training data
 counties <- read.csv("train_potus_by_county.csv")
@@ -18,8 +20,8 @@ summary(counties) # Overview of columns
 plot(counties) # Look for correlations, distributions, and outliers
 aggregate(. ~ winner, data=counties, FUN=median) # See which variables differ by who won the county
 
-# Randomly assign counties to k differently folds and prepare data for cross-validation
-# Note: With a larger dataset, duplicating the data would be impossible / unreasonable
+# Function to prepare data for cross-validation
+# (Note: With a larger dataset, duplicating the data would be impossible / unreasonable)
 kFold <- 10
 extractTrainingSet <- function(df, fold.i){
   fold.column <- which(colnames(df) == "fold")
@@ -32,32 +34,59 @@ extractEvaluationSet <- function(df, fold.i){
   return(eval.set)  
 }
 prepareForCrossValidation <- function(df.train, kFold){
-  df.train <- df.train[sample(nrow(counties))]
+  df.train <- df.train[sample(nrow(df.train))]
   df.train$fold <- rep(1:kFold)
   train.sets <- lapply(1:kFold, FUN=extractTrainingSet, df=df.train)
   eval.sets <- lapply(1:kFold, FUN=extractEvaluationSet, df=df.train)
   return(list(train=train.sets, eval=eval.sets))
 }
+
+# Function to evaluate models using k-Fold Cross Validation
+evaluateModel <- function(model.function, categorical, predict.function=predict, cv.splits=cross.validation.splits){
+  actual <- lapply(cv.splits$eval, function(x) x$winner)
+  models <- lapply(cv.splits$train, model.function)
+  fitted.values <- mapply(FUN=predict.function, models, cv.splits$eval)
+  if (categorical){
+    accuracies <- mapply(FUN=function(fit, actual) mean(fit == actual), fitted.values, actual)
+    confusion.matrices <- mapply(FUN=table, fitted.values, actual, SIMPLIFY=F)
+  } else{
+    accuracies <- mapply(FUN=function(fit, actual) mean((fit > 0.5) == (actual == "Barack Obama")), fitted.values, actual)
+    confusion.matrices <- mapply(FUN=function(fit, actual) table(fit > 0.5, actual == "Barack Obama"), fitted.values, actual, SIMPLIFY=F)
+  }
+  mean.accuracy <- mean(accuracies)
+  mean.confusion.matrix <- prop.table(Reduce("+", confusion.matrices))
+  
+  performance <- list(accuracy=mean.accuracy, confusion.matrix=mean.confusion.matrix)
+  class(performance) <- "model.performance"
+  return(performance)
+}
+
+# Function for printing objects of class "model.performance"
+print.model.performance <- function(perf){
+  cat("Cross-Validated Accuracy:", perf$accuracy, "\nCross-Validated Confusion Matrix:\n")
+  print(perf$confusion.matrix)
+}
+
+# Prepare objects for model evaluation
 kFold <- 10
 cross.validation.splits <- prepareForCrossValidation(counties, kFold)
 
-# Extract actual values from evaluation sets
-# Note: I am formulating the problem as a binary classification problem where Obama winning = TRUE and Romney winning = FALSE
-eval.actual <- lapply(cross.validation.splits$eval, function(x) x$winner == "Barack Obama")
-
-# Function to evaluate models using k-Fold Cross Validation
-evaluateModel <- function(model.function, cv.splits=cross.validation.splits, actual=eval.actual){
-  models <- lapply(cv.splits$train, model.function)
-  fitted.values <- mapply(FUN=predict, models, cv.splits$eval, type="response")
-  accuracies <- mapply(FUN=function(fit, actual) mean((fit > 0.5) == actual), fitted.values, actual)
-  mean.accuracy <- mean(accuracies)
-  return(mean.accuracy)
-}
-
-# Evaluate logistic regression
-fitLogistic <- function(df) glm(winner == "Barack Obama" ~ ., family="binomial", data=df)
-evaluateModel(fitLogistic)
+# Evaluate logistic regression (assumes Obama winning = TRUE and Romney winning = FALSE)
+trainLogistic <- function(df) glm(winner == "Barack Obama" ~ ., family="binomial", data=df)
+logistic.performace <- evaluateModel(trainLogistic, categorical=F)
 
 # Evaluate RandomForest
-fitRandomForest <- function(df) randomForest(winner == "Barack Obama" ~ ., data=df, ntree=500)
-evaluateModel(fitRandomForest)
+trainRandomForest <- function(df) randomForest(winner ~ ., data=df, n.trees=1000)
+random.forest.performance <- evaluateModel(trainRandomForest, categorical=T)
+
+# Evaluate Generalized Boosting Model
+trainBoosting <- function(df) gbm(winner ~ ., data=df, distribution="multinomial", n.trees=1000, interaction.depth=3)
+fitBoosting <- function(model, df) predict.gbm(model, df, n.trees=800, type="response")[, 1, 1]
+boosting.performance <- evaluateModel(trainBoosting, categorical=F, predict.function=fitBoosting)
+
+# Fit most predictive model (Random Forest) on full dataset and save
+random.forest.model <- trainRandomForest(counties)
+save(random.forest.model, file="model.RData")
+
+# Write expected performance to file
+capture.output(print(random.forest.performance), file="performance.txt")
