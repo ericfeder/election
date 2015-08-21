@@ -54,6 +54,10 @@ evaluateModel <- function(model.function, cv.splits=cross.validation.splits, act
   return(mean.accuracy)
 }
 
-# Fit logistic regression
+# Evaluate logistic regression
 glm.model.function <- function(df) glm(winner == "Barack Obama" ~ ., family="binomial", data=df)
 evaluateModel(glm.model.function)
+
+# Evaluate RandomForest
+rf.model.function <- function(df) randomForest(winner == "Barack Obama" ~ ., data=df, ntree=500)
+evaluateModel(rf.model.function)
