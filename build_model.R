@@ -10,17 +10,14 @@ library(randomForest)
 library(gbm)
 library(e1071)
 
-# Read training data
+# Read training data and cast to data table
 counties <- read.csv("train_potus_by_county.csv")
-
-# Cast to data table and rename columns
 counties <- data.table(counties)
-setnames(counties, c("total.population", "median.age", "perc.bachelors", "unemployment.rate", "per.capita.income", "total.households", "average.household.size", "perc.owner.occupied", "perc.renter.occupied", "perc.vacant.housing", "median.home.value", "population.growth", "household.growth", "per.capita.income.growth", "winner"))
 
 # Exploratory analysis
 summary(counties) # Overview of columns
 plot(counties) # Look for correlations, distributions, and outliers
-aggregate(. ~ winner, data=counties, FUN=median) # See which variables differ by who won the county
+aggregate(. ~ Winner, data=counties, FUN=median) # See which variables differ by who won the county
 
 # Function to prepare data for cross-validation
 # (Note: With a larger dataset, duplicating the data would be impossible / unreasonable)
@@ -45,7 +42,7 @@ prepareForCrossValidation <- function(df.train, kFold){
 
 # Function to evaluate models using k-Fold Cross Validation
 evaluateModel <- function(model.function, categorical, predict.function=predict, cv.splits=cross.validation.splits){
-  actual <- lapply(cv.splits$eval, function(x) x$winner)
+  actual <- lapply(cv.splits$eval, function(x) x$Winner)
   models <- lapply(cv.splits$train, model.function)
   fitted.values <- mapply(FUN=predict.function, models, cv.splits$eval)
   if (categorical){
@@ -74,7 +71,7 @@ kFold <- 10
 cross.validation.splits <- prepareForCrossValidation(counties, kFold)
 
 # Evaluate logistic regression (assumes Obama winning = TRUE and Romney winning = FALSE)
-trainLogistic <- function(df) glm(winner == "Barack Obama" ~ ., family="binomial", data=df)
+trainLogistic <- function(df) glm(Winner == "Barack Obama" ~ ., family="binomial", data=df)
 logistic.performace <- evaluateModel(trainLogistic, categorical=F)
 
 # Evaluate Supper Vector Machine
@@ -82,11 +79,11 @@ trainSVM <- function(df) svm(Winner ~ ., data=df, kernel="linear")
 svm.performance <- evaluateModel(trainSVM, categorical=T)
 
 # Evaluate RandomForest
-trainRandomForest <- function(df) randomForest(winner ~ ., data=df, n.trees=1000)
+trainRandomForest <- function(df) randomForest(Winner ~ ., data=df, n.trees=1000)
 random.forest.performance <- evaluateModel(trainRandomForest, categorical=T)
 
 # Evaluate Generalized Boosting Model
-trainBoosting <- function(df) gbm(winner ~ ., data=df, distribution="multinomial", n.trees=1000, interaction.depth=3)
+trainBoosting <- function(df) gbm(Winner ~ ., data=df, distribution="multinomial", n.trees=1000, interaction.depth=3)
 fitBoosting <- function(model, df) predict.gbm(model, df, n.trees=800, type="response")[, 1, 1]
 boosting.performance <- evaluateModel(trainBoosting, categorical=F, predict.function=fitBoosting)
 
