@@ -2,11 +2,13 @@
 # install.packages("data.table")
 # install.packages("randomForest")
 # install.packages("gbm")
+# install.packages("e1071")
 
 # Load necessary packages
 library(data.table)
 library(randomForest)
 library(gbm)
+library(e1071)
 
 # Read training data
 counties <- read.csv("train_potus_by_county.csv")
@@ -74,6 +76,10 @@ cross.validation.splits <- prepareForCrossValidation(counties, kFold)
 # Evaluate logistic regression (assumes Obama winning = TRUE and Romney winning = FALSE)
 trainLogistic <- function(df) glm(winner == "Barack Obama" ~ ., family="binomial", data=df)
 logistic.performace <- evaluateModel(trainLogistic, categorical=F)
+
+# Evaluate Supper Vector Machine
+trainSVM <- function(df) svm(Winner ~ ., data=df, kernel="linear")
+svm.performance <- evaluateModel(trainSVM, categorical=T)
 
 # Evaluate RandomForest
 trainRandomForest <- function(df) randomForest(winner ~ ., data=df, n.trees=1000)
