@@ -53,3 +53,7 @@ evaluateModel <- function(model.function, cv.splits=cross.validation.splits, act
   mean.accuracy <- mean(accuracies)
   return(mean.accuracy)
 }
+
+# Fit logistic regression
+glm.model.function <- function(df) glm(winner == "Barack Obama" ~ ., family="binomial", data=df)
+evaluateModel(glm.model.function)
